@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Dashboard Financiero</h1>
+<small>Proyectos + distribución de pagos</small>
+</header>
+
+
+<section class="card">
+<h3>Nuevo / Editar proyecto</h3>
+<form id="f">
+<input type="hidden" name="id" />
+<div class="grid">
+<label>Fecha<input name="fecha" type="date" required></label>
+<label>Cliente<input name="cliente" required placeholder="Cliente"></label>
+<label>Proyecto<input name="proyecto" required placeholder="Proyecto"></label>
+<label>Monto (CLP)<input name="monto" type="number" step="1" required></label>
+<label>% Cobrado<input name="porc_cobrado" type="number" step="1" min="0" max="100" required></label>
+<label>Vendedor<input name="vendedor" required></label>
+<label>Director<input name="director" required></label>
+<label>Consultor<input name="consultor" required></label>
+<label>Estado
+<select name="estado">
+<option>Prospecto</option>
+<option>Propuesta</option>
+<option>Aprobado</option>
+<option selected>En curso</option>
+<option>Pausado</option>
+<option>Finalizado</option>
+<option>Facturado</option>
+<option>Cobrado parcial</option>
+<option>Cobrado 100%</option>
+<option>Cancelado</option>
+</select>
+</label>
+</div>
+<div class="row">
+<button type="submit">Guardar</button>
+<button type="button" id="btnReset" class="ghost">Limpiar</button>
+</div>
+</form>
+</section>
+
+
+<section class="card">
+<div class="row space">
+<h3>Proyectos</h3>
+<input id="q" placeholder="🔎 Buscar cliente/proyecto" />
+</div>
+<div class="scroll">
+<table id="tbl">
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Cliente</th>
+<th>Proyecto</th>
+<th class="r">Monto</th>
+<th class="r">% Cob.</th>
+<th class="r">Cobrado</th>
+<th>Vendedor</th>
+<th>Director</th>
+<th>Consultor</th>
+<th>Estado</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</section>
+
+
+<section class="card">
+<h3>Distribución (sobre monto cobrado)</h3>
+<div id="resumen"></div>
+</section>
+</div>
+
+
+<script src="app.js"></script>
+</body>
+</html>
