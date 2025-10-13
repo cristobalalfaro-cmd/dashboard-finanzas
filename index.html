@@ -40,38 +40,79 @@
 
     <!-- Formulario Crear/Editar proyecto -->
     <section class="card">
-      <h3>Nuevo / Editar proyecto</h3>
-      <form id="f">
-        <input type="hidden" name="id" />
-        <div class="grid">
-          <label>Fecha<input name="fecha" type="date" required></label>
-          <label>Cliente<input name="cliente" required placeholder="Cliente"></label>
-          <label>Proyecto<input name="proyecto" required placeholder="Proyecto"></label>
-          <label>Monto (CLP)<input name="monto" type="number" step="1" required></label>
+<h2>Nuevo / Editar proyecto</h2>
+<form id="f">
+  <div class="form-grid">
+    <div>
+      <label>Fecha</label>
+      <input type="date" name="fecha">
+    </div>
+    <div>
+      <label>Cliente</label>
+      <input type="text" name="cliente" placeholder="Cliente">
+    </div>
+    <div>
+      <label>Proyecto</label>
+      <input type="text" name="proyecto" placeholder="Proyecto">
+    </div>
+  </div>
 
-          <!-- Estado -->
-          <label>Estado
-            <select name="estado" id="estado">
-              <option>Prospecto</option>
-              <option>Propuesta</option>
-              <option>Aprobado</option>
-              <option selected>En curso</option>
-              <option>Pausado</option>
-              <option>Finalizado</option>
-              <option>Facturado</option>
-              <option>Pagado parcial</option>
-              <option>Pagado</option>
-              <option>Cancelado</option>
-            </select>
-          </label>
+  <div class="form-grid">
+    <div>
+      <label>Monto (CLP)</label>
+      <input type="number" name="monto" placeholder="Monto">
+    </div>
+    <div>
+      <label>Estado</label>
+      <select name="estado">
+        <option>En curso</option>
+        <option>Aprobado</option>
+        <option>Pausado</option>
+        <option>Finalizado</option>
+        <option>Cancelado</option>
+        <option>Facturado</option>
+        <option>Pagado parcial</option>
+        <option>Pagado</option>
+      </select>
+    </div>
+  </div>
 
-          <label>Vendedor<input name="vendedor" required></label>
-          <label>Director<input name="director" required></label>
-          <label>Consultor<input name="consultor" required></label>
-          <label>Administración (responsable)<input name="administracion" id="administracion" required placeholder="Nombre de quien administra"></label>
-          <label>Gasto (responsable)<input name="gasto" id="gasto" required placeholder="Nombre a cargo de gastos"></label>
-          <label>Fee Consultora (responsable)<input name="fee_consultora" id="fee_consultora" required placeholder="Nombre responsable del fee"></label>
-        </div>
+  <div class="form-grid">
+    <div>
+      <label>Vendedor</label>
+      <input type="text" name="vendedor" placeholder="Vendedor">
+    </div>
+    <div>
+      <label>Director</label>
+      <input type="text" name="director" placeholder="Director">
+    </div>
+    <div>
+      <label>Consultor</label>
+      <input type="text" name="consultor" placeholder="Consultor">
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <div>
+      <label>Administración (responsable)</label>
+      <input type="text" name="administracion" placeholder="Nombre responsable de administración">
+    </div>
+    <div>
+      <label>Gasto (responsable)</label>
+      <input type="text" name="gasto" placeholder="Nombre a cargo de gastos">
+    </div>
+    <div>
+      <label>Fee Consultora (responsable)</label>
+      <input type="text" name="fee_consultora" placeholder="Responsable Fee Consultora">
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button type="submit">Guardar</button>
+    <button type="button" id="btnReset" class="btn-secondary">Limpiar</button>
+  </div>
+</form>
+
 
         <!-- Campos condicionales de pago -->
         <div id="pagoFields" class="grid" style="display:none">
