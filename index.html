@@ -1,87 +1,236 @@
 <!DOCTYPE html>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Financiero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-<div class="wrap">
-<header>
-<h1>Dashboard Financiero</h1>
-<small>Proyectos + distribución de pagos</small>
-</header>
+  <!-- ======= Auth Gate ======= -->
+  <div id="auth" class="auth">
+    <div class="auth__card">
+      <h2>Ingresa tu clave</h2>
+      <input id="authPass" type="password" placeholder="Clave" />
+      <button id="authBtn">Entrar</button>
+      <small class="muted">Se recuerda por 24 horas en este navegador.</small>
+      <div id="authMsg" class="auth__msg"></div>
+    </div>
+  </div>
 
+  <div class="wrap" id="app" style="display:none">
+    <header>
+      <h1>Dashboard Financiero</h1>
+      <small>Proyectos + distribución de pagos</small>
+    </header>
 
-<section class="card">
-<h3>Nuevo / Editar proyecto</h3>
-<form id="f">
-<input type="hidden" name="id" />
-<div class="grid">
-<label>Fecha<input name="fecha" type="date" required></label>
-<label>Cliente<input name="cliente" required placeholder="Cliente"></label>
-<label>Proyecto<input name="proyecto" required placeholder="Proyecto"></label>
-<label>Monto (CLP)<input name="monto" type="number" step="1" required></label>
-<label>% Cobrado<input name="porc_cobrado" type="number" step="1" min="0" max="100" required></label>
-<label>Vendedor<input name="vendedor" required></label>
-<label>Director<input name="director" required></label>
-<label>Consultor<input name="consultor" required></label>
-<label>Estado
-<select name="estado">
-<option>Prospecto</option>
-<option>Propuesta</option>
-<option>Aprobado</option>
-<option selected>En curso</option>
-<option>Pausado</option>
-<option>Finalizado</option>
-<option>Facturado</option>
-<option>Cobrado parcial</option>
-<option>Cobrado 100%</option>
-<option>Cancelado</option>
-</select>
-</label>
-</div>
-<div class="row">
-<button type="submit">Guardar</button>
-<button type="button" id="btnReset" class="ghost">Limpiar</button>
-</div>
-</form>
-</section>
+    <!-- KPIs -->
+    <section class="card">
+      <div class="grid kpis">
+        <div class="kpi"><span class="kpi__t">Ventas Totales</span><span id="kpiVentas" class="kpi__v">$0</span></div>
+        <div class="kpi"><span class="kpi__t">Monto Pagado</span><span id="kpiCobrado" class="kpi__v">$0</span></div>
+        <div class="kpi"><span class="kpi__t">Saldo por Cobrar</span><span id="kpiSaldo" class="kpi__v">$0</span></div>
+      </div>
+    </section>
 
+    <!-- Formulario Crear/Editar proyecto -->
+    <section class="card">
+      <h3>Nuevo / Editar proyecto</h3>
+      <form id="f">
+        <input type="hidden" name="id" />
+        <div class="grid">
+          <label>Fecha<input name="fecha" type="date" required></label>
+          <label>Cliente<input name="cliente" required placeholder="Cliente"></label>
+          <label>Proyecto<input name="proyecto" required placeholder="Proyecto"></label>
+          <label>Monto (CLP)<input name="monto" type="number" step="1" required></label>
 
-<section class="card">
-<div class="row space">
-<h3>Proyectos</h3>
-<input id="q" placeholder="🔎 Buscar cliente/proyecto" />
-</div>
-<div class="scroll">
-<table id="tbl">
-<thead>
-<tr>
-<th>Fecha</th>
-<th>Cliente</th>
-<th>Proyecto</th>
-<th class="r">Monto</th>
-<th class="r">% Cob.</th>
-<th class="r">Cobrado</th>
-<th>Vendedor</th>
-<th>Director</th>
-<th>Consultor</th>
-<th>Estado</th>
-<th></th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</section>
+          <!-- Estado -->
+          <label>Estado
+            <select name="estado" id="estado">
+              <option>Prospecto</option>
+              <option>Propuesta</option>
+              <option>Aprobado</option>
+              <option selected>En curso</option>
+              <option>Pausado</option>
+              <option>Finalizado</option>
+              <option>Facturado</option>
+              <option>Pagado parcial</option>
+              <option>Pagado</option>
+              <option>Cancelado</option>
+            </select>
+          </label>
 
+          <label>Vendedor<input name="vendedor" required></label>
+          <label>Director<input name="director" required></label>
+          <label>Consultor<input name="consultor" required></label>
+          <label>Administración (responsable)<input name="administracion" id="administracion" required placeholder="Nombre de quien administra"></label>
+          <label>Gasto (responsable)<input name="gasto" id="gasto" required placeholder="Nombre a cargo de gastos"></label>
+          <label>Fee Consultora (responsable)<input name="fee_consultora" id="fee_consultora" required placeholder="Nombre responsable del fee"></label>
+        </div>
 
-<section class="card">
-<h3>Distribución (sobre monto cobrado)</h3>
-<div id="resumen"></div>
-</section>
-</div>
+        <!-- Campos condicionales de pago -->
+        <div id="pagoFields" class="grid" style="display:none">
+          <label id="grpPorcPagado">% pagado
+            <input name="porc_cobrado" id="porc_pagado" type="number" step="1" min="0" max="100" placeholder="0–100">
+          </label>
+          <label id="grpMontoPagado">Monto pagado (CLP)
+            <input id="monto_pagado" type="number" step="1" placeholder="Ej: 3000000">
+          </label>
+          <label id="grpFechaEstimada">Fecha estimada de pago
+            <input name="fecha_estimada_pago" id="fecha_estimada_pago" type="date">
+          </label>
+          <label id="grpFechaPago" style="display:none">Fecha de pago
+            <input name="fecha_pago" id="fecha_pago" type="date">
+          </label>
+        </div>
 
+        <div class="row">
+          <button type="submit">Guardar</button>
+          <button type="button" id="btnReset" class="ghost">Limpiar</button>
+        </div>
+      </form>
+    </section>
 
-<script src="app.js"></script>
+    <!-- Rendición de gastos -->
+    <section class="card">
+      <div class="row space">
+        <h3>Rendición gastos</h3>
+        <div id="boxDisponible" class="pill"></div>
+      </div>
+      <form id="fgasto">
+        <div class="grid">
+          <label>Fecha gasto<input id="g_fecha" type="date" required></label>
+          <label>Monto (CLP)<input id="g_monto" type="number" step="1" min="0" required></label>
+          <label>Cliente
+            <select id="g_cliente" required></select>
+          </label>
+          <label>Proyecto
+            <select id="g_proyecto" required></select>
+          </label>
+        </div>
+        <div class="row">
+          <button type="submit">Registrar gasto</button>
+          <button type="button" id="g_reset" class="ghost">Limpiar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Reglas editables -->
+    <section class="card">
+      <h3>Reglas de distribución (editable)</h3>
+      <div class="grid" id="rulesForm">
+        <label>Vendedor (%)<input type="number" step="0.1" min="0" max="100" id="rule_vendedor"></label>
+        <label>Director (%)<input type="number" step="0.1" min="0" max="100" id="rule_director"></label>
+        <label>Consultor (%)<input type="number" step="0.1" min="0" max="100" id="rule_consultor"></label>
+        <label>Gasto (%)<input type="number" step="0.1" min="0" max="100" id="rule_gasto"></label>
+        <label>Administración (%)<input type="number" step="0.1" min="0" max="100" id="rule_admin"></label>
+        <label>Fee Consultora (%)<input type="number" step="0.1" min="0" max="100" id="rule_fee"></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <span id="rulesTotal" class="badge">Total: 0%</span>
+        <button type="button" id="saveRules">Guardar reglas</button>
+        <button type="button" id="resetRules" class="ghost">Reset a 15/18/50/3/4/10</button>
+      </div>
+      <small class="muted">Se aplican sobre el <strong>monto pagado</strong>.</small>
+    </section>
+
+    <!-- Tabla proyectos -->
+    <section class="card">
+      <div class="row space">
+        <h3>Proyectos</h3>
+        <div class="row">
+          <input id="q" placeholder="🔎 Buscar cliente/proyecto" />
+          <select id="fEstado">
+            <option value="">Todos los estados</option>
+            <option>Prospecto</option>
+            <option>Propuesta</option>
+            <option>Aprobado</option>
+            <option>En curso</option>
+            <option>Pausado</option>
+            <option>Finalizado</option>
+            <option>Facturado</option>
+            <option>Pagado parcial</option>
+            <option>Pagado</option>
+            <option>Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <div class="scroll">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Proyecto</th>
+              <th class="r">Monto</th>
+              <th class="r">% Pagado</th>
+              <th class="r">Pagado</th>
+              <th>Vendedor</th>
+              <th>Director</th>
+              <th>Consultor</th>
+              <th>Administración</th>
+              <th>Gasto</th>
+              <th>Fee Consultora</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Gráficos -->
+    <section class="card">
+      <h3>Gráficos de distribución</h3>
+      <div class="grid charts">
+        <div class="chartBox">
+          <h4>Torta por rol</h4>
+          <canvas id="chartRoles"></canvas>
+        </div>
+        <div class="chartBox">
+          <h4>Torta por persona/organización</h4>
+          <canvas id="chartPersonas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Totales por rol -->
+    <section class="card">
+      <h3>Totales por rol (sobre monto pagado)</h3>
+      <div class="scroll">
+        <table id="tblRoles">
+          <thead><tr><th>Rol</th><th class="r">Monto</th></tr></thead>
+          <tbody></tbody>
+          <tfoot><tr><th>Total</th><th class="r" id="ttlRoles">$0</th></tr></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- Liquidación por persona -->
+    <section class="card">
+      <h3>Liquidación por persona (todos los roles)</h3>
+      <div class="scroll">
+        <table id="tblPersonas">
+          <thead><tr><th>Persona/Organización</th><th>Rol</th><th class="r">Monto</th><th class="r"># Proyectos</th></tr></thead>
+          <tbody></tbody>
+          <tfoot><tr><th colspan="2">Total</th><th class="r" id="ttlPersonas">$0</th><th></th></tr></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- Resumen distribución -->
+    <section class="card">
+      <h3>Distribución (sobre monto pagado)</h3>
+      <div id="resumen"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
