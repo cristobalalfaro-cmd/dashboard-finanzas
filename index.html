@@ -40,128 +40,106 @@
 
     <!-- Formulario Crear/Editar proyecto -->
     <section class="card">
-<h3>Nuevo / Editar proyecto</h3>
-<form id="f">
-  <!-- necesario para poder editar -->
-  <input type="hidden" name="id" />
+      <h3>Nuevo / Editar proyecto</h3>
+      <form id="f">
+        <!-- necesario para poder editar -->
+        <input type="hidden" name="id" />
 
-  <!-- Fila 1: Fecha / Cliente / Proyecto -->
-  <div class="form-grid">
-    <div>
-      <label>Fecha</label>
-      <input type="date" name="fecha" />
-    </div>
-    <div>
-      <label>Cliente</label>
-      <input type="text" name="cliente" placeholder="Cliente" />
-    </div>
-    <div>
-      <label>Proyecto</label>
-      <input type="text" name="proyecto" placeholder="Proyecto" />
-    </div>
-  </div>
-
-  <!-- Fila 2: Monto / Estado -->
-  <div class="form-grid">
-    <div>
-      <label>Monto (CLP)</label>
-      <input type="number" name="monto" step="1" placeholder="Monto" />
-    </div>
-    <div>
-      <label>Estado</label>
-      <select name="estado" id="estado">
-        <option>Prospecto</option>
-        <option>Propuesta</option>
-        <option>Aprobado</option>
-        <option selected>En curso</option>
-        <option>Pausado</option>
-        <option>Finalizado</option>
-        <option>Facturado</option>
-        <option>Pagado parcial</option>
-        <option>Pagado</option>
-        <option>Cancelado</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Fila condicional de pago (mantener ids para app.js) -->
-  <div id="pagoFields" class="form-grid" style="display:none">
-    <div id="grpPorcPagado">
-      <label>% pagado</label>
-      <input name="porc_cobrado" id="porc_pagado" type="number" step="1" min="0" max="100" placeholder="0–100" />
-    </div>
-    <div id="grpMontoPagado">
-      <label>Monto pagado (CLP)</label>
-      <input id="monto_pagado" type="number" step="1" placeholder="Ej: 3000000" />
-    </div>
-    <div id="grpFechaEstimada">
-      <label>Fecha estimada de pago</label>
-      <input name="fecha_estimada_pago" id="fecha_estimada_pago" type="date" />
-    </div>
-    <div id="grpFechaPago" style="display:none">
-      <label>Fecha de pago</label>
-      <input name="fecha_pago" id="fecha_pago" type="date" />
-    </div>
-  </div>
-
-  <!-- Fila 3: Vendedor / Director / Consultor -->
-  <div class="form-grid">
-    <div>
-      <label>Vendedor</label>
-      <input type="text" name="vendedor" placeholder="Vendedor" />
-    </div>
-    <div>
-      <label>Director</label>
-      <input type="text" name="director" placeholder="Director" />
-    </div>
-    <div>
-      <label>Consultor</label>
-      <input type="text" name="consultor" placeholder="Consultor" />
-    </div>
-  </div>
-
-  <!-- Fila 4: Administración / Gasto / Fee Consultora -->
-  <div class="form-grid">
-    <div>
-      <label>Administración (responsable)</label>
-      <input type="text" name="administracion" placeholder="Nombre responsable de administración" />
-    </div>
-    <div>
-      <label>Gasto (responsable)</label>
-      <input type="text" name="gasto" placeholder="Nombre a cargo de gastos" />
-    </div>
-    <div>
-      <label>Fee Consultora (responsable)</label>
-      <input type="text" name="fee_consultora" placeholder="Responsable del fee" />
-    </div>
-  </div>
-
-  <!-- Botones (únicos) -->
-  <div class="buttons">
-    <button type="submit">Guardar</button>
-    <button type="button" id="btnReset" class="btn-secondary">Limpiar</button>
-  </div>
-</form>
-
-        <!-- Campos condicionales de pago -->
-        <div id="pagoFields" class="grid" style="display:none">
-          <label id="grpPorcPagado">% pagado
-            <input name="porc_cobrado" id="porc_pagado" type="number" step="1" min="0" max="100" placeholder="0–100">
-          </label>
-          <label id="grpMontoPagado">Monto pagado (CLP)
-            <input id="monto_pagado" type="number" step="1" placeholder="Ej: 3000000">
-          </label>
-          <label id="grpFechaEstimada">Fecha estimada de pago
-            <input name="fecha_estimada_pago" id="fecha_estimada_pago" type="date">
-          </label>
-          <label id="grpFechaPago" style="display:none">Fecha de pago
-            <input name="fecha_pago" id="fecha_pago" type="date">
-          </label>
+        <!-- Fila 1: Fecha / Cliente / Proyecto -->
+        <div class="form-grid">
+          <div>
+            <label>Fecha</label>
+            <input type="date" name="fecha" />
+          </div>
+          <div>
+            <label>Cliente</label>
+            <input type="text" name="cliente" placeholder="Cliente" />
+          </div>
+          <div>
+            <label>Proyecto</label>
+            <input type="text" name="proyecto" placeholder="Proyecto" />
+          </div>
         </div>
 
-        <div class="row">
+        <!-- Fila 2: Monto / Estado -->
+        <div class="form-grid">
+          <div>
+            <label>Monto (CLP)</label>
+            <input type="number" name="monto" step="1" placeholder="Monto" />
+          </div>
+          <div>
+            <label>Estado</label>
+            <select name="estado" id="estado">
+              <option>Prospecto</option>
+              <option>Propuesta</option>
+              <option>Aprobado</option>
+              <option selected>En curso</option>
+              <option>Pausado</option>
+              <option>Finalizado</option>
+              <option>Facturado</option>
+              <option>Pagado parcial</option>
+              <option>Pagado</option>
+              <option>Cancelado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila condicional de pago (mantener ids para app.js) -->
+        <div id="pagoFields" class="form-grid" style="display:none">
+          <div id="grpPorcPagado">
+            <label>% pagado</label>
+            <input name="porc_cobrado" id="porc_pagado" type="number" step="1" min="0" max="100" placeholder="0–100" />
+          </div>
+          <div id="grpMontoPagado">
+            <label>Monto pagado (CLP)</label>
+            <input id="monto_pagado" type="number" step="1" placeholder="Ej: 3000000" />
+          </div>
+          <div id="grpFechaEstimada">
+            <label>Fecha estimada de pago</label>
+            <input name="fecha_estimada_pago" id="fecha_estimada_pago" type="date" />
+          </div>
+          <div id="grpFechaPago" style="display:none">
+            <label>Fecha de pago</label>
+            <input name="fecha_pago" id="fecha_pago" type="date" />
+          </div>
+        </div>
+
+        <!-- Fila 3: Vendedor / Director / Consultor -->
+        <div class="form-grid">
+          <div>
+            <label>Vendedor</label>
+            <input type="text" name="vendedor" placeholder="Vendedor" />
+          </div>
+          <div>
+            <label>Director</label>
+            <input type="text" name="director" placeholder="Director" />
+          </div>
+          <div>
+            <label>Consultor</label>
+            <input type="text" name="consultor" placeholder="Consultor" />
+          </div>
+        </div>
+
+        <!-- Fila 4: Administración / Gasto / Fee Consultora -->
+        <div class="form-grid">
+          <div>
+            <label>Administración (responsable)</label>
+            <input type="text" name="administracion" placeholder="Nombre responsable de administración" />
+          </div>
+          <div>
+            <label>Gasto (responsable)</label>
+            <input type="text" name="gasto" placeholder="Nombre a cargo de gastos" />
+          </div>
+          <div>
+            <label>Fee Consultora (responsable)</label>
+            <input type="text" name="fee_consultora" placeholder="Responsable del fee" />
+          </div>
+        </div>
+
+        <!-- Botones (únicos) -->
+        <div class="buttons">
           <button type="submit">Guardar</button>
-          <button type="button" id="btnReset" class="ghost">Limpiar</button>
+          <button type="button" id="btnReset" class="btn-secondary">Limpiar</button>
         </div>
       </form>
     </section>
