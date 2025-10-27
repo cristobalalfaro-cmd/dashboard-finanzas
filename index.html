@@ -8,290 +8,81 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
-  <!-- Chart.js ya no es necesario; puedes quitarlo si quieres -->
+  <!-- Chart.js para los mini-gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <!-- ======= Auth Gate ======= -->
+  <!-- ======= Login ======= -->
   <div id="auth" class="auth">
     <div class="auth__card">
       <h2>Ingresa tu clave</h2>
       <input id="authPass" type="password" placeholder="Clave" />
       <button id="authBtn">Entrar</button>
-      <small class="muted">Se recuerda por 24 horas en este navegador.</small>
+      <small class="muted">Se recuerda por 24 h.</small>
       <div id="authMsg" class="auth__msg"></div>
     </div>
   </div>
 
+  <!-- ======= App ======= -->
   <div class="wrap" id="app" style="display:none">
     <header>
       <h1>Dashboard Financiero</h1>
       <small>Proyectos + distribución de pagos</small>
     </header>
 
-    <!-- KPIs -->
-<section class="card">
-  <div class="kpi-bar">
-    <div class="grid kpis">
-      <div class="kpi"><span class="kpi__t">Ventas Totales</span><span id="kpiVentas" class="kpi__v">$0</span></div>
-      <div class="kpi"><span class="kpi__t">Monto Pagado</span><span id="kpiCobrado" class="kpi__v">$0</span></div>
-      <div class="kpi"><span class="kpi__t">Saldo por Cobrar</span><span id="kpiSaldo" class="kpi__v">$0</span></div>
-    </div>
-
-    <div class="mini-charts">
-      <div class="mini-chart">
-        <h4>Pagado vs Saldo</h4>
-        <canvas id="piePagadoSaldo"></canvas>
-      </div>
-      <div class="mini-chart">
-        <h4>Estados</h4>
-        <canvas id="pieEstados"></canvas>
-      </div>
-    </div>
-  </div>
-</section>
-
-    <!-- Formulario Crear/Editar proyecto -->
+    <!-- KPIs + gráficos -->
     <section class="card">
-      <h3>Nuevo / Editar proyecto</h3>
-      <form id="f">
-        <input type="hidden" name="id" />
-        <!-- Fila 1 -->
-        <div class="form-grid">
-          <div>
-            <label>Fecha</label>
-            <input type="date" name="fecha" />
-          </div>
-          <div>
-            <label>Cliente</label>
-            <input type="text" name="cliente" placeholder="Cliente" />
-          </div>
-          <div>
-            <label>Proyecto</label>
-            <input type="text" name="proyecto" placeholder="Proyecto" />
-          </div>
+      <div class="kpi-bar">
+        <div class="grid kpis">
+          <div class="kpi"><span class="kpi__t">Ventas Totales</span><span id="kpiVentas" class="kpi__v">$0</span></div>
+          <div class="kpi"><span class="kpi__t">Monto Pagado</span><span id="kpiCobrado" class="kpi__v">$0</span></div>
+          <div class="kpi"><span class="kpi__t">Saldo por Cobrar</span><span id="kpiSaldo" class="kpi__v">$0</span></div>
         </div>
 
-        <!-- Fila 2 -->
-        <div class="form-grid">
-          <div>
-            <label>Monto (CLP)</label>
-            <input type="number" name="monto" step="1" placeholder="Monto" />
+        <div class="mini-charts">
+          <div class="mini-chart">
+            <h4>Pagado vs Saldo</h4>
+            <canvas id="piePagadoSaldo"></canvas>
           </div>
-          <div>
-            <label>Estado</label>
+          <div class="mini-chart">
+            <h4>Estados</h4>
+            <canvas id="pieEstados"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resto del contenido (formularios, tablas, etc.) -->
+    <section class="card">
+      <h3>Formulario de Proyecto</h3>
+      <form id="f">
+        <div class="form-grid">
+          <div><label>Fecha</label><input type="date" name="fecha" /></div>
+          <div><label>Cliente</label><input type="text" name="cliente" placeholder="Cliente" /></div>
+          <div><label>Proyecto</label><input type="text" name="proyecto" placeholder="Proyecto" /></div>
+        </div>
+        <div class="form-grid">
+          <div><label>Monto (CLP)</label><input type="number" name="monto" /></div>
+          <div><label>Estado</label>
             <select name="estado" id="estado">
-              <option>Prospecto</option>
-              <option>Propuesta</option>
-              <option>Aprobado</option>
-              <option selected>En curso</option>
-              <option>Pausado</option>
-              <option>Finalizado</option>
-              <option>Facturado</option>
+              <option>En curso</option>
               <option>Pagado parcial</option>
               <option>Pagado</option>
-              <option>Cancelado</option>
             </select>
           </div>
         </div>
-
-        <!-- Campos condicionales -->
-        <div id="pagoFields" class="form-grid" style="display:none">
-          <div id="grpPorcPagado">
-            <label>% pagado</label>
-            <input name="porc_cobrado" id="porc_pagado" type="number" step="1" min="0" max="100" placeholder="0–100" />
-          </div>
-          <div id="grpMontoPagado">
-            <label>Monto pagado (CLP)</label>
-            <input id="monto_pagado" type="number" step="1" placeholder="Ej: 3000000" />
-          </div>
-          <div id="grpFechaEstimada">
-            <label>Fecha estimada de pago</label>
-            <input name="fecha_estimada_pago" id="fecha_estimada_pago" type="date" />
-          </div>
-          <div id="grpFechaPago" style="display:none">
-            <label>Fecha de pago</label>
-            <input name="fecha_pago" id="fecha_pago" type="date" />
-          </div>
-        </div>
-
-        <!-- Fila 3 -->
-        <div class="form-grid">
-          <div>
-            <label>Vendedor</label>
-            <input type="text" name="vendedor" placeholder="Vendedor" />
-          </div>
-          <div>
-            <label>Director</label>
-            <input type="text" name="director" placeholder="Director" />
-          </div>
-          <div>
-            <label>Consultor</label>
-            <input type="text" name="consultor" placeholder="Consultor" />
-          </div>
-        </div>
-
-        <!-- Fila 4 -->
-        <div class="form-grid">
-          <div>
-            <label>Administración (responsable)</label>
-            <input type="text" name="administracion" placeholder="Nombre responsable de administración" />
-          </div>
-          <div>
-            <label>Gasto (responsable)</label>
-            <input type="text" name="gasto" placeholder="Nombre a cargo de gastos" />
-          </div>
-          <div>
-            <label>Fee Consultora (responsable)</label>
-            <input type="text" name="fee_consultora" placeholder="Responsable del fee" />
-          </div>
-        </div>
-
         <div class="buttons">
           <button type="submit">Guardar</button>
           <button type="button" id="btnReset" class="btn-secondary">Limpiar</button>
         </div>
       </form>
     </section>
-
-    <!-- ======= Dos columnas: Rendición de Gastos + Reglas ======= -->
-    <div class="two-col">
-      <!-- Rendición de gastos -->
-      <section class="card">
-        <div class="row space">
-          <h3>Rendición gastos</h3>
-          <div id="boxDisponible" class="pill"></div>
-        </div>
-        <form id="fgasto">
-          <div class="form-grid">
-            <div>
-              <label>Fecha gasto</label>
-              <input id="g_fecha" type="date" required>
-            </div>
-            <div>
-              <label>Monto (CLP)</label>
-              <input id="g_monto" type="number" step="1" min="0" required>
-            </div>
-            <div>
-              <label>Cliente</label>
-              <select id="g_cliente" required></select>
-            </div>
-            <div>
-              <label>Proyecto</label>
-              <select id="g_proyecto" required></select>
-            </div>
-          </div>
-          <div class="buttons">
-            <button type="submit">Registrar gasto</button>
-            <button type="button" id="g_reset" class="btn-secondary">Limpiar</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Reglas editables -->
-      <section class="card">
-        <h3>Reglas de distribución (editable)</h3>
-        <div class="form-grid">
-          <div><label>Vendedor (%)</label><input type="number" step="0.1" min="0" max="100" id="rule_vendedor"></div>
-          <div><label>Director (%)</label><input type="number" step="0.1" min="0" max="100" id="rule_director"></div>
-          <div><label>Consultor (%)</label><input type="number" step="0.1" min="0" max="100" id="rule_consultor"></div>
-          <div><label>Gasto (%)</label><input type="number" step="0.1" min="0" max="100" id="rule_gasto"></div>
-          <div><label>Administración (%)</label><input type="number" step="0.1" min="0" max="100" id="rule_admin"></div>
-          <div><label>Fee Consultora (%)</label><input type="number" step="0.1" min="0" max="100" id="rule_fee"></div>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <span id="rulesTotal" class="badge">Total: 0%</span>
-          <button type="button" id="saveRules">Guardar reglas</button>
-          <button type="button" id="resetRules" class="btn-secondary">Reset a 15/18/50/3/4/10</button>
-        </div>
-        <small class="muted">Se aplican sobre el <strong>monto pagado</strong>.</small>
-      </section>
-    </div>
-
-    <!-- Tabla proyectos -->
-    <section class="card">
-      <div class="row space">
-        <h3>Proyectos</h3>
-        <div class="row">
-          <input id="q" placeholder="🔎 Buscar cliente/proyecto" />
-          <select id="fEstado">
-            <option value="">Todos los estados</option>
-            <option>Prospecto</option>
-            <option>Propuesta</option>
-            <option>Aprobado</option>
-            <option>En curso</option>
-            <option>Pausado</option>
-            <option>Finalizado</option>
-            <option>Facturado</option>
-            <option>Pagado parcial</option>
-            <option>Pagado</option>
-            <option>Cancelado</option>
-          </select>
-        </div>
-      </div>
-      <div class="scroll">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Cliente</th>
-              <th>Proyecto</th>
-              <th class="r">Monto</th>
-              <th class="r">% Pagado</th>
-              <th class="r">Pagado</th>
-              <th>Vendedor</th>
-              <th>Director</th>
-              <th>Consultor</th>
-              <th>Administración</th>
-              <th>Gasto</th>
-              <th>Fee Consultora</th>
-              <th>Estado</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Consolidado por persona/organización -->
-    <section class="card">
-      <h3>Consolidado por persona/organización</h3>
-      <div class="scroll">
-        <table id="tblConsolidado">
-          <thead>
-            <tr>
-              <th>Persona/Organización</th>
-              <th class="r">Vendedor</th>
-              <th class="r">Director</th>
-              <th class="r">Consultor</th>
-              <th class="r">Administración</th>
-              <th class="r">Gasto</th>
-              <th class="r">Fee Consultora</th>
-              <th class="r">Total</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot>
-            <tr>
-              <th>Total general</th>
-              <th class="r" id="tVend">$0</th>
-              <th class="r" id="tDir">$0</th>
-              <th class="r" id="tCons">$0</th>
-              <th class="r" id="tAdm">$0</th>
-              <th class="r" id="tGas">$0</th>
-              <th class="r" id="tFee">$0</th>
-              <th class="r" id="tTot">$0</th>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
-
   </div>
 
   <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
