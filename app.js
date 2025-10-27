@@ -1,15 +1,14 @@
-// ================== app.js (completo) ==================
-// Autenticación, CRUD de proyectos, rendición de gastos, KPIs y gráficos
-// -------------------------------------------------------
+// ================== app.js ==================
+// Auth, CRUD de proyectos, rendición de gastos, KPIs y consolidado por persona
 
-// ======= Auth (misma clave que el dashboard anterior) =======
+// ======= Auth =======
 const STORAGE_KEY = 'dashproj_auth_v1';
 const AUTH_HASH   = '488c013cb6bf0d8e7dae92e89d72a058ed3181a7c8bed1bceb456b2176bb1746'; // SHA-256 de "Tomi.2016"
 
 // ======= Backend =======
-const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwzIu3thgpFk5QmHVD6wR7x9gurX4_AdEg_SesunvoPkHG-A9Kd3vJqzICr0FyT0Xk3/exec';
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbyth4jXe6dTjOnE6Zyfy8TlUEwVqIVZrp2tYrr2xR4e9N46yGnVpTwhE9w4NVPYl6Zv/exec';
 
-// Reglas por defecto (se guardan en localStorage y deben sumar 100%)
+// Reglas por defecto
 const DEFAULT_RULES = {
   Vendedor: 0.15,
   Director: 0.18,
@@ -20,14 +19,11 @@ const DEFAULT_RULES = {
 };
 let RULES = loadRules();
 
-const fmt = new Intl.NumberFormat('es-CL', {
-  style: 'currency', currency: 'CLP', maximumFractionDigits: 0
-});
+const fmt = new Intl.NumberFormat('es-CL', { style:'currency', currency:'CLP', maximumFractionDigits:0 });
 
 // ======= Estado =======
 let rows = [];    // proyectos
 let gastos = [];  // rendiciones
-let chartRoles, chartPersonas;
 
 // ======= Utils =======
 function toNumberSafe(v){ return Number(String(v ?? 0).replace(/\./g,'').replace(',', '.')) || 0; }
@@ -67,8 +63,8 @@ function loadRules(){
 function saveRules(){
   localStorage.setItem('rules_finanzas', JSON.stringify(RULES));
   renderResumen();
-  renderRolesAndPersonas();
-  renderCharts();
+  renderTable();
+  renderConsolidado();
 }
 
 // ======= Auth helpers =======
@@ -167,10 +163,9 @@ async function reload(){
 
   renderTable();
   renderResumen();
-  renderRolesAndPersonas();
-  renderCharts();
   hydrateGastosSelectors();
   updateDisponible();
+  renderConsolidado();
 }
 
 // ======= Estado → campos condicionales =======
@@ -339,122 +334,10 @@ function renderResumen(){
     pagado += cobrar(r.monto, r.porc_cobrado);
   }
   const saldo = Math.max(0, total - pagado);
-  const dist = distribucion(pagado);
 
   document.getElementById('kpiVentas').textContent = fmt.format(total);
   document.getElementById('kpiCobrado').textContent = fmt.format(pagado);
   document.getElementById('kpiSaldo').textContent = fmt.format(saldo);
-
-  const cont = document.getElementById('resumen');
-  cont.innerHTML = `<p><strong>Total pagado:</strong> ${fmt.format(pagado)}</p>`+
-    `<ul>`+
-    Object.entries(dist).map(([k,v])=>`<li>${k}: <strong>${fmt.format(v)}</strong></li>`).join('')+
-    `</ul>`;
-}
-
-// ======= Agregados por rol/persona =======
-function computeAggregates(){
-  const rolesTotals = { Vendedor:0, Director:0, Consultor:0, Gasto:0, Administracion:0, FeeConsultora:0 };
-  const personasMap = new Map();
-
-  const ROLE_FIELDS = {
-    Vendedor: 'vendedor',
-    Director: 'director',
-    Consultor: 'consultor',
-    Administracion: 'administracion',
-    Gasto: 'gasto',
-    FeeConsultora: 'fee_consultora'
-  };
-
-  for(const r of rows){
-    const pagado = cobrar(r.monto, r.porc_cobrado);
-    for(const [rol, pct] of Object.entries(RULES)){
-      const m = pagado * pct;
-      rolesTotals[rol] += m;
-      const field = ROLE_FIELDS[rol];
-      const nombre = normalizeName(r[field]);
-      if (nombre){
-        const key = `${rol}|${nombre}`.toLowerCase();
-        if (!personasMap.has(key)){
-          personasMap.set(key, { persona: nombre, rol, monto: 0, count: 0 });
-        }
-        const rec = personasMap.get(key);
-        rec.monto += m;
-        rec.count += 1;
-      }
-    }
-  }
-  return { rolesTotals, personas: Array.from(personasMap.values()) };
-}
-
-function renderRolesAndPersonas(){
-  const { rolesTotals, personas } = computeAggregates();
-
-  // Roles
-  const tbRoles = document.querySelector('#tblRoles tbody');
-  tbRoles.innerHTML = '';
-  let totalRoles = 0;
-  for(const rol of ['Vendedor','Director','Consultor','Gasto','Administracion','FeeConsultora']){
-    const v = rolesTotals[rol] || 0;
-    totalRoles += v;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${rol}</td><td class="r">${fmt.format(v)}</td>`;
-    tbRoles.appendChild(tr);
-  }
-  document.getElementById('ttlRoles').textContent = fmt.format(totalRoles);
-
-  // Personas
-  const tbPers = document.querySelector('#tblPersonas tbody');
-  tbPers.innerHTML = '';
-  let totalPers = 0;
-  personas.sort((a,b)=> b.monto - a.monto);
-  for(const p of personas){
-    totalPers += p.monto;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${p.persona}</td>
-      <td>${p.rol}</td>
-      <td class="r">${fmt.format(p.monto)}</td>
-      <td class="r">${p.count}</td>`;
-    tbPers.appendChild(tr);
-  }
-  document.getElementById('ttlPersonas').textContent = fmt.format(totalPers);
-}
-
-// ======= Gráficos (Chart.js) =======
-function renderCharts(){
-  const { rolesTotals, personas } = computeAggregates();
-
-  // Pie por rol
-  const rolesLabels = ['Vendedor','Director','Consultor','Gasto','Administracion','FeeConsultora'];
-  const rolesData = rolesLabels.map(l=>rolesTotals[l]||0);
-  if(chartRoles) chartRoles.destroy();
-  chartRoles = new Chart(document.getElementById('chartRoles'), {
-    type:'pie',
-    data:{ labels: rolesLabels, datasets:[{ data: rolesData }] },
-    options:{ plugins:{ legend:{ position:'bottom' } } }
-  });
-
-  // Pie por persona (limita y agrupa "Otros")
-  const list = [...personas].sort((a,b)=>b.monto-a.monto);
-  const total = list.reduce((s,x)=>s+x.monto,0) || 1;
-  const labels=[], data=[];
-  let otros=0;
-  for(const p of list){
-    const pct = p.monto/total;
-    if (labels.length<12 && pct>=0.03){
-      labels.push(`${p.persona} (${p.rol})`);
-      data.push(p.monto);
-    } else otros += p.monto;
-  }
-  if (otros>0){ labels.push('Otros'); data.push(otros); }
-
-  if(chartPersonas) chartPersonas.destroy();
-  chartPersonas = new Chart(document.getElementById('chartPersonas'), {
-    type:'pie',
-    data:{ labels, datasets:[{ data }] },
-    options:{ plugins:{ legend:{ position:'bottom' } } }
-  });
 }
 
 // ======= Selectores de gastos / disponible =======
@@ -574,3 +457,80 @@ async function onSubmitProyecto(e){
   await reload();
   alert('✅ Cambios guardados');
 }
+
+// ======= Consolidado por persona/organización =======
+function computeAggregatesByPerson(){
+  // Retorna un mapa: persona -> {Vendedor, Director, Consultor, Administracion, Gasto, FeeConsultora, Total}
+  const ROLE_FIELDS = {
+    Vendedor: 'vendedor',
+    Director: 'director',
+    Consultor: 'consultor',
+    Administracion: 'administracion',
+    Gasto: 'gasto',
+    FeeConsultora: 'fee_consultora'
+  };
+  const acc = new Map();
+
+  for(const r of rows){
+    const pag = cobrar(r.monto, r.porc_cobrado);
+    for(const [rol, pct] of Object.entries(RULES)){
+      const field = ROLE_FIELDS[rol];
+      const persona = normalizeName(r[field]);
+      if(!persona) continue;
+      const montoRol = pag * pct;
+
+      if(!acc.has(persona)){
+        acc.set(persona, { Vendedor:0, Director:0, Consultor:0, Administracion:0, Gasto:0, FeeConsultora:0, Total:0 });
+      }
+      const o = acc.get(persona);
+      o[rol] += montoRol;
+      o.Total += montoRol;
+    }
+  }
+  return acc;
+}
+
+function renderConsolidado(){
+  const tbody = document.querySelector('#tblConsolidado tbody');
+  const tVend = document.getElementById('tVend');
+  const tDir  = document.getElementById('tDir');
+  const tCons = document.getElementById('tCons');
+  const tAdm  = document.getElementById('tAdm');
+  const tGas  = document.getElementById('tGas');
+  const tFee  = document.getElementById('tFee');
+  const tTot  = document.getElementById('tTot');
+
+  tbody.innerHTML = '';
+  let sumVend=0,sumDir=0,sumCons=0,sumAdm=0,sumGas=0,sumFee=0,sumTot=0;
+
+  const acc = computeAggregatesByPerson();
+  const rowsP = Array.from(acc.entries())
+    .map(([persona, vals]) => ({ persona, ...vals }))
+    .sort((a,b)=> b.Total - a.Total);
+
+  for(const p of rowsP){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.persona}</td>
+      <td class="r">${fmt.format(p.Vendedor)}</td>
+      <td class="r">${fmt.format(p.Director)}</td>
+      <td class="r">${fmt.format(p.Consultor)}</td>
+      <td class="r">${fmt.format(p.Administracion)}</td>
+      <td class="r">${fmt.format(p.Gasto)}</td>
+      <td class="r">${fmt.format(p.FeeConsultora)}</td>
+      <td class="r"><strong>${fmt.format(p.Total)}</strong></td>`;
+    tbody.appendChild(tr);
+
+    sumVend+=p.Vendedor; sumDir+=p.Director; sumCons+=p.Consultor;
+    sumAdm+=p.Administracion; sumGas+=p.Gasto; sumFee+=p.FeeConsultora; sumTot+=p.Total;
+  }
+
+  tVend.textContent = fmt.format(sumVend);
+  tDir.textContent  = fmt.format(sumDir);
+  tCons.textContent = fmt.format(sumCons);
+  tAdm.textContent  = fmt.format(sumAdm);
+  tGas.textContent  = fmt.format(sumGas);
+  tFee.textContent  = fmt.format(sumFee);
+  tTot.textContent  = fmt.format(sumTot);
+}
+
