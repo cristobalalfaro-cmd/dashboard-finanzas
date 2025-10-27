@@ -753,3 +753,54 @@ function renderConsolidado(){
   tFee.textContent  = fmt.format(sumFee);
   tTot.textContent  = fmt.format(sumTot);
 }
+/* Inputs blancos sobre tema oscuro */
+input, select, textarea {
+  background: #ffffff !important;
+  color: #111 !important;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+input::placeholder, textarea::placeholder { color: #777; }
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 6px #58a6ff55;
+}
+
+/* Barra de KPIs con mini gráficos al lado */
+.kpi-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+.kpis { margin: 0; } /* ya la tienes, esto asegura menor margen */
+
+.mini-charts {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.mini-chart {
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  width: 180px;         /* compacto */
+}
+.mini-chart h4 {
+  margin: 0 0 6px 0;
+  font-size: 0.9rem;
+  color: var(--muted-color);
+  font-weight: 600;
+}
+.mini-chart canvas {
+  width: 160px !important;
+  height: 160px !important;
+}
+
+/* Responsive: debajo de 900px, apila */
+@media (max-width: 900px){
+  .kpi-bar { grid-template-columns: 1fr; }
+  .mini-charts { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+}
