@@ -29,13 +29,26 @@
     </header>
 
     <!-- KPIs -->
-    <section class="card">
-      <div class="grid kpis">
-        <div class="kpi"><span class="kpi__t">Ventas Totales</span><span id="kpiVentas" class="kpi__v">$0</span></div>
-        <div class="kpi"><span class="kpi__t">Monto Pagado</span><span id="kpiCobrado" class="kpi__v">$0</span></div>
-        <div class="kpi"><span class="kpi__t">Saldo por Cobrar</span><span id="kpiSaldo" class="kpi__v">$0</span></div>
+<section class="card">
+  <div class="kpi-bar">
+    <div class="grid kpis">
+      <div class="kpi"><span class="kpi__t">Ventas Totales</span><span id="kpiVentas" class="kpi__v">$0</span></div>
+      <div class="kpi"><span class="kpi__t">Monto Pagado</span><span id="kpiCobrado" class="kpi__v">$0</span></div>
+      <div class="kpi"><span class="kpi__t">Saldo por Cobrar</span><span id="kpiSaldo" class="kpi__v">$0</span></div>
+    </div>
+
+    <div class="mini-charts">
+      <div class="mini-chart">
+        <h4>Pagado vs Saldo</h4>
+        <canvas id="piePagadoSaldo"></canvas>
       </div>
-    </section>
+      <div class="mini-chart">
+        <h4>Estados</h4>
+        <canvas id="pieEstados"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
 
     <!-- Formulario Crear/Editar proyecto -->
     <section class="card">
@@ -279,5 +292,6 @@
   <script src="app.js"></script>
 </body>
 </html>
+
 
 
