@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Financiero · Ingresos & Gastos</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js for KPIs and distribución por rol -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <!-- Google Charts for Gantt -->
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js" defer></script>
+  <!-- Config (edita con tu API Key y Sheet ID) -->
+  <script src="config.js" defer></script>
+  <!-- App -->
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Dashboard Financiero</h1>
+    <div class="source-indicator">
+      <span id="sheetLink"></span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">Total Ingresos (Bruto)</div>
+        <div class="kpi-value" id="kpiTotalIngresos">$ —</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Vendedor</div>
+        <div class="kpi-value" id="kpiVendedor">$ —</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Director PM</div>
+        <div class="kpi-value" id="kpiDirectorPM">$ —</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Consultor</div>
+        <div class="kpi-value" id="kpiConsultor">$ —</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Gasto Proyecto</div>
+        <div class="kpi-value" id="kpiGastoProyecto">$ —</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Administración</div>
+        <div class="kpi-value" id="kpiAdministracion">$ —</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Comité</div>
+        <div class="kpi-value" id="kpiComite">$ —</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Distribución por Rol</h2>
+      <canvas id="chartRoles" height="120"></canvas>
+    </section>
+
+    <section class="panel">
+      <h2>Facturación (6 meses) · Fechas de Factura & Pago Proyectado</h2>
+      <div class="gantt-controls">
+        <label>Meses a mostrar:
+          <select id="monthsWindow">
+            <option value="6" selected>6</option>
+            <option value="3">3</option>
+            <option value="9">9</option>
+            <option value="12">12</option>
+          </select>
+        </label>
+      </div>
+      <div id="gantt" class="gantt"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Listados por Estatus</h2>
+      <div class="lists-grid">
+        <details open>
+          <summary>Pagadas</summary>
+          <ul id="listPagadas"></ul>
+        </details>
+        <details>
+          <summary>Por emitir</summary>
+          <ul id="listPorEmitir"></ul>
+        </details>
+      </div>
+    </section>
+
+    <section class="panel note">
+      <h3>Notas sobre el Google Sheets</h3>
+      <p>
+        Asegúrate de que el Sheet tenga al menos estas columnas exactas (encabezados en la fila 1):<br/>
+        <code>Cliente</code>, <code>Proyecto</code>, <code>Total Factura Proyecto (Bruto)</code>, <code>Vendedor</code>, <code>Director PM</code>, <code>Consultor</code>, <code>Gasto Proyecto</code>, <code>Administración</code>, <code>Comité</code>, <code>Fecha Factura</code>, <code>Fecha Pago Proyectada</code>, <code>Estatus Factura</code>, <code>Rol Asignado</code> (opcional).
+      </p>
+      <p>
+        Formatos de fecha soportados: <em>DD/MM/AAAA</em>, <em>DD-MM-AAAA</em>, <em>DD-MMM-YY</em> con meses en español (ej.: <em>03-sept-25</em>).
+      </p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Hecho con ♥ · Gris / Blanco / Negro</span>
+  </footer>
+</body>
+</html>
