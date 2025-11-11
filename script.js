@@ -92,14 +92,14 @@
     return map;
   }
 
-  async function fetchSheet(){
-    const cfg = window.APP_CONFIG || {};
-    const key = cfg.GOOGLE_SHEETS_API_KEY;
-    const sid = cfg.SHEET_ID;
-    const range = encodeURIComponent(cfg.RANGE || "Hoja1!A1:Z2000");
-    if(!key || !sid){
-      throw new Error("Falta configurar GOOGLE_SHEETS_API_KEY y SHEET_ID en config.js");
-    }
+  async function fetchSheet() {
+  const url = window.APP_CONFIG.WEB_APP_URL;
+  if (!url) throw new Error("Falta configurar WEB_APP_URL en config.js");
+  const resp = await fetch(url);
+  const data = await resp.json();
+  return data.values || [];
+  }
+
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${range}?key=${key}`;
     const resp = await fetch(url);
     if(!resp.ok){
