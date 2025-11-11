@@ -1,3 +1,3 @@
 window.APP_CONFIG = {
-  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxMGzbCg6IgYd0PKFoYK2cplwOyNkb5gxb_UMSLvr_eiF3_KT2SxgQzK3u9-gG3H1ms/exec"
+  WEB_APP_URL: "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLga_uLYCDNyfDhYG6zoiKpojgHsq7X47Cf-k_GXbj2aMdT32BehT85wYcAt6U5ZXCphsB_ClPGHkjoTJBATTgxYQXbMjbFxtzKJuhybeYKKDHJ_-OipAELbzgdem7WhaKfYzQfFsD89kQwLd6vp_XMM1Q34O7KxKtyJRCbEgLU_nRQ1XNuZaADYrFBRKjEBOrT-R4ovAe8RmZDB2n408dNJtQBw2sOsfqf5kYn6-IfPcrEkXIIjOw_b-Q4FDzwGTy81k4_SlNiOb6AHghLDst-zt5TcdA&lib=M2o4SYPjLklkUKl25JXde_agLslxuhQuA"
 };
