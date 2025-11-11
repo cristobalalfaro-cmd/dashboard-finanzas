@@ -1,1 +1,3 @@
-window.APP_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbztmB1SC7F5dSqrvQWe9Z5aFV_jbZXzjtmm2sjrpZsyTptBk43-AspuXdkaxfRslzR2/exec" };
+window.APP_CONFIG = {
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbztmB1SC7F5dSqrvQWe9Z5aFV_jbZXzjtmm2sjrpZsyTptBk43-AspuXdkaxfRslzR2/exec"
+};

@@ -1,20 +1,23 @@
-
 (() => {
-  const currencyFmt = (n) => isNaN(n) ? "$ —" :
-    n.toLocaleString("es-CL", { style:"currency", currency:"CLP", maximumFractionDigits:0 });
-
-  const SPLIT = { vendedor:.15, director:.18, consultor:.50, gasto:.03, administracion:.04, comite:.10 };
   const MONTH_LABELS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const SPLIT = { vendedor:.15, director:.18, consultor:.50, gasto:.03, administracion:.04, comite:.10 };
+
+  const fmt = (n) => isNaN(n) ? "$ —" :
+    n.toLocaleString("es-CL", { style:"currency", currency:"CLP", maximumFractionDigits:0 });
 
   function parseSmartDate(str){
     if(!str) return null;
-    let s = String(str).trim().toLowerCase();
-    let d = new Date(s); if(!isNaN(d)) return d;
-    let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-    if(m){ const [_,dd,mm,yy]=m; const yyyy = yy.length===2 ? ("20"+yy) : yy;
-      let d2 = new Date(`${yyyy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`); if(!isNaN(d2)) return d2; }
+    const s = String(str).trim().toLowerCase();
+    const d = new Date(s); if(!isNaN(d)) return d;
+    const m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+    if(m){
+      const [_,dd,mm,yy]=m; const yyyy = yy.length===2 ? ("20"+yy) : yy;
+      const d2 = new Date(`${yyyy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`);
+      if(!isNaN(d2)) return d2;
+    }
     return null;
   }
+  const sumBy = (rows,key)=> rows.reduce((a,r)=> a+(Number(r[key])||0),0);
 
   function headerIndexMap(headers){
     const norm = s=> s.toString().trim().toLowerCase();
@@ -41,7 +44,7 @@
     const url = (window.APP_CONFIG && window.APP_CONFIG.WEB_APP_URL) || "";
     if(!url) throw new Error("Falta configurar WEB_APP_URL en config.js");
     const resp = await fetch(url, { cache:"no-store" });
-    if(!resp.ok){ throw new Error(`Error Web App: ${resp.status}`); }
+    if(!resp.ok) throw new Error(`Error Web App: ${resp.status}`);
     const data = await resp.json();
     return data.values || [];
   }
@@ -80,14 +83,13 @@
     return rows;
   }
 
-  function equipoHASet(){ return new Set(["owner h&a","loreto naranjo","cristóbal alfaro","cristobal alfaro"]); }
-  function getOwnerSet(selected){
+  const EQUIPO_HA = new Set(["owner h&a","loreto naranjo","cristóbal alfaro","cristobal alfaro"]);
+  const getOwnerSet = (selected)=>{
     if(!selected) return null;
     const s = selected.toLowerCase();
-    if(s.includes("equipo h")) return equipoHASet();
+    if(s.includes("equipo h")) return EQUIPO_HA;
     return new Set([s]);
-  }
-
+  };
   function ownerAmountForRow(r, ownerSet){
     if(!ownerSet) return r.total;
     let sum = 0;
@@ -113,38 +115,28 @@
     };
   }
 
-  function sumBy(rows,key){ return rows.reduce((a,r)=> a+(Number(r[key])||0),0); }
+  function populateFilters(allRows){
+    const yearsFactura = Array.from(new Set(allRows.filter(r=>r.fecha_factura).map(r=> r.fecha_factura.getFullYear()))).sort();
+    const yearsPago = Array.from(new Set(allRows.filter(r=>r.fecha_pago).map(r=> r.fecha_pago.getFullYear()))).sort();
+    const estatus = Array.from(new Set(allRows.map(r=> (r.estatus||"").trim()).filter(Boolean))).sort();
+    const owners = Array.from(new Set(allRows.flatMap(r=>[
+      r.vendedor_persona, r.director_persona, r.consultor_persona, r.gasto_persona, r.administracion_persona, r.comite_persona
+    ]).map(x=> (x||"").trim()).filter(Boolean))).sort();
 
-  function applyFilters(allRows){
-    const fy = document.getElementById("filterYearFactura").value;
-    const py = document.getElementById("filterYearPago").value;
-    const est = (document.getElementById("filterEstatus").value || "").toLowerCase();
-    const ownerSel = document.getElementById("filterOwner").value;
-    const ownerSet = getOwnerSet(ownerSel);
+    const selOwner = document.getElementById("filterOwner");
+    selOwner.innerHTML = '<option value="">Todos</option>' +
+      '<option value="Equipo H&A">Equipo H&A</option>' +
+      owners.map(v=> `<option value="${v}">${v}</option>`).join('');
 
-    const base = allRows.filter(r=>{
-      let ok = true;
-      if(fy){ ok = ok && r.fecha_factura && r.fecha_factura.getFullYear().toString()===fy; }
-      if(py){ ok = ok && r.fecha_pago && r.fecha_pago.getFullYear().toString()===py; }
-      if(est){ ok = ok && (r.estatus||"").toLowerCase().includes(est); }
-      return ok;
-    });
+    const fillSelect = (selId, arr) => {
+      const sel = document.getElementById(selId);
+      sel.innerHTML = '<option value="">Todos</option>' + arr.map(v=> `<option value="${v}">${v}</option>`).join('');
+    };
+    fillSelect("filterYearFactura", yearsFactura);
+    fillSelect("filterYearPago", yearsPago);
 
-    return base.map(r=>{
-      const ownerTotal = ownerAmountForRow(r, ownerSet);
-      const breakdown = ownerRoleBreakdown(r, ownerSet);
-      return { ...r, owner_total: ownerTotal, ...Object.fromEntries(Object.entries(breakdown)) };
-    });
-  }
-
-  function setKPIs(rows){
-    document.getElementById("kpiTotalIngresos").textContent = currencyFmt(sumBy(rows,"owner_total"));
-    document.getElementById("kpiVendedor").textContent = currencyFmt(sumBy(rows,"vendedor"));
-    document.getElementById("kpiDirectorPM").textContent = currencyFmt(sumBy(rows,"director"));
-    document.getElementById("kpiConsultor").textContent = currencyFmt(sumBy(rows,"consultor"));
-    document.getElementById("kpiGastoProyecto").textContent = currencyFmt(sumBy(rows,"gasto"));
-    document.getElementById("kpiAdministracion").textContent = currencyFmt(sumBy(rows,"administracion"));
-    document.getElementById("kpiComite").textContent = currencyFmt(sumBy(rows,"comite"));
+    const selEst = document.getElementById("filterEstatus");
+    selEst.innerHTML = '<option value="">Todos</option>' + estatus.map(v=> `<option value="${v}">${v}</option>`).join('');
   }
 
   function setStatusKPIs(rows){
@@ -152,47 +144,37 @@
     const pagado = by(r=> (r.estatus||"").toLowerCase().includes("pagad"));
     const noPagado = by(r=> (r.estatus||"").toLowerCase().includes("cobrada"));
     const noFacturado = by(r=> (r.estatus||"").toLowerCase().includes("por emitir"));
-    document.getElementById("kpiPagado").textContent = currencyFmt(pagado);
-    document.getElementById("kpiNoPagado").textContent = currencyFmt(noPagado);
-    document.getElementById("kpiNoFacturado").textContent = currencyFmt(noFacturado);
+    document.getElementById("kpiPagado").textContent = fmt(pagado);
+    document.getElementById("kpiNoPagado").textContent = fmt(noPagado);
+    document.getElementById("kpiNoFacturado").textContent = fmt(noFacturado);
   }
-
   function renderLists(rows){
     const pagadas = rows.filter(r=> (r.estatus||"").toLowerCase().includes("pagad"));
     const porEmitir = rows.filter(r=> (r.estatus||"").toLowerCase().includes("por emitir"));
-    const li = r => `<li><strong>${r.cliente}</strong> — ${r.proyecto} · Factura: ${r.fecha_factura? r.fecha_factura.toLocaleDateString("es-CL"):"—"} · Pago Proyectado/Pagado: ${r.fecha_pago? r.fecha_pago.toLocaleDateString("es-CL"):"—"} · Asignado: ${currencyFmt(r.owner_total||0)}</li>`;
+    const li = r => `<li><strong>${r.cliente}</strong> — ${r.proyecto} · Factura: ${r.fecha_factura? r.fecha_factura.toLocaleDateString("es-CL"):"—"} · Pago Proyectado/Pagado: ${r.fecha_pago? r.fecha_pago.toLocaleDateString("es-CL"):"—"} · Asignado: ${fmt(r.owner_total||0)}</li>`;
     document.getElementById("listPagadas").innerHTML = pagadas.map(li).join("");
     document.getElementById("listPorEmitir").innerHTML = porEmitir.map(li).join("");
   }
 
+  function setKPIs(rows){
+    document.getElementById("kpiTotalIngresos").textContent = fmt(sumBy(rows,"owner_total"));
+    document.getElementById("kpiVendedor").textContent = fmt(sumBy(rows,"vendedor"));
+    document.getElementById("kpiDirectorPM").textContent = fmt(sumBy(rows,"director"));
+    document.getElementById("kpiConsultor").textContent = fmt(sumBy(rows,"consultor"));
+    document.getElementById("kpiGastoProyecto").textContent = fmt(sumBy(rows,"gasto"));
+    document.getElementById("kpiAdministracion").textContent = fmt(sumBy(rows,"administracion"));
+    document.getElementById("kpiComite").textContent = fmt(sumBy(rows,"comite"));
+  }
   function setPrevisionLiquidos(rows){
     const asignado = sumBy(rows, "owner_total");
     const ret = Math.round(asignado * 0.145);
     const liquido = asignado - ret;
-    document.getElementById("kpiAsignadoBruto").textContent = currencyFmt(asignado);
-    document.getElementById("kpiRetencion").textContent = currencyFmt(ret);
-    document.getElementById("kpiIngresoLiquido").textContent = currencyFmt(liquido);
+    document.getElementById("kpiAsignadoBruto").textContent = fmt(asignado);
+    document.getElementById("kpiRetencion").textContent = fmt(ret);
+    document.getElementById("kpiIngresoLiquido").textContent = fmt(liquido);
   }
 
-  function equipoHAIngresosByMonth(allRows){
-    const set = new Set(["owner h&a","loreto naranjo","cristóbal alfaro","cristobal alfaro"]);
-    const map = new Map();
-    for(const r of allRows){
-      if(!r.fecha_pago) continue;
-      if(!((r.estatus||"").toLowerCase().includes("pagad"))) continue;
-      let asignado = 0;
-      if(set.has((r.vendedor_persona||"").toLowerCase())) asignado += r.vendedor;
-      if(set.has((r.director_persona||"").toLowerCase())) asignado += r.director;
-      if(set.has((r.consultor_persona||"").toLowerCase())) asignado += r.consultor;
-      if(set.has((r.gasto_persona||"").toLowerCase())) asignado += r.gasto;
-      if(set.has((r.administracion_persona||"").toLowerCase())) asignado += r.administracion;
-      if(set.has((r.comite_persona||"").toLowerCase())) asignado += r.comite;
-      const key = `${r.fecha_pago.getFullYear()}-${String(r.fecha_pago.getMonth()+1).padStart(2,"0")}`;
-      map.set(key, (map.get(key)||0) + asignado);
-    }
-    return map;
-  }
-
+  let chartNext6 = null, chartYear = null;
   function buildBarChart(ctx, labels, facturacion, ingresos){
     if(!ctx) return null;
     const maxVal = Math.max(...facturacion, ...ingresos, 0);
@@ -208,12 +190,12 @@
         responsive: true,
         plugins: {
           legend: { labels: { color:"#e0e0e0" } },
-          datalabels: { color:"#fff", anchor:"end", align:"end", formatter:(v)=> currencyFmt(v), clamp:true },
-          tooltip: { callbacks: { label:(c)=> `${c.dataset.label}: ${currencyFmt(c.parsed.y)}` } }
+          datalabels: { color:"#fff", anchor:"end", align:"end", formatter:(v)=> fmt(v), clamp:true },
+          tooltip: { callbacks: { label:(c)=> `${c.dataset.label}: ${fmt(c.parsed.y)}` } }
         },
         scales: {
           x: { ticks:{ color:"#e0e0e0" }, grid:{ color:"#2a2b2e" } },
-          y: { ticks:{ color:"#e0e0e0", stepSize: step, callback:(v)=> currencyFmt(v) }, grid:{ color:"#2a2b2e" }, suggestedMax: yMax }
+          y: { ticks:{ color:"#e0e0e0", stepSize: step, callback:(v)=> fmt(v) }, grid:{ color:"#2a2b2e" }, suggestedMax: yMax }
         }
       },
       plugins: [ChartDataLabels]
@@ -244,99 +226,32 @@
     chartYear = buildBarChart(document.getElementById("chartYear"), monthsList.map(x=>x.label), fact, ing);
   }
 
-  let RAW_ROWS = [];
-  let chartNext6 = null, chartYear = null;
-
-  function renderAll(){
-    const rows = applyFilters(RAW_ROWS);
-    setKPIs(rows);
-    setStatusKPIs(rows);
-    setPrevisionLiquidos(rows);
-    renderPlanningNext6(rows);
-    renderPlanningYear(rows);
-    renderLists(rows);
-    renderDebt(RAW_ROWS);
-  }
-  async function refreshData(){
-    const cfg = window.APP_CONFIG || {};
-    if(cfg.WEB_APP_URL){
-      const a = document.createElement("a"); a.href = cfg.WEB_APP_URL; a.target="_blank"; a.rel="noopener"; a.textContent = "Ver Web App (Sheet)";
-      const cont = document.getElementById("sheetLink"); cont.innerHTML = ""; cont.appendChild(a);
+  function equipoHAIngresosByMonth(allRows){
+    const map = new Map();
+    for(const r of allRows){
+      if(!r.fecha_pago) continue;
+      if(!((r.estatus||"").toLowerCase().includes("pagad"))) continue;
+      let asignado = 0;
+      if(EQUIPO_HA.has((r.vendedor_persona||"").toLowerCase())) asignado += r.vendedor;
+      if(EQUIPO_HA.has((r.director_persona||"").toLowerCase())) asignado += r.director;
+      if(EQUIPO_HA.has((r.consultor_persona||"").toLowerCase())) asignado += r.consultor;
+      if(EQUIPO_HA.has((r.gasto_persona||"").toLowerCase())) asignado += r.gasto;
+      if(EQUIPO_HA.has((r.administracion_persona||"").toLowerCase())) asignado += r.administracion;
+      if(EQUIPO_HA.has((r.comite_persona||"").toLowerCase())) asignado += r.comite;
+      const key = `${r.fecha_pago.getFullYear()}-${String(r.fecha_pago.getMonth()+1).padStart(2,"0")}`;
+      map.set(key, (map.get(key)||0) + asignado);
     }
-    const values = await fetchSheet();
-    RAW_ROWS = toRows(values);
-    populateFilters(RAW_ROWS);
-    renderAll();
+    return map;
   }
-  function populateFilters(allRows){
-    const yearsFactura = Array.from(new Set(allRows.filter(r=>r.fecha_factura).map(r=> r.fecha_factura.getFullYear()))).sort();
-    const yearsPago = Array.from(new Set(allRows.filter(r=>r.fecha_pago).map(r=> r.fecha_pago.getFullYear()))).sort();
-    const estatus = Array.from(new Set(allRows.map(r=> (r.estatus||"").trim()).filter(Boolean))).sort();
-
-    const owners = Array.from(new Set(allRows.flatMap(r=>[
-      r.vendedor_persona, r.director_persona, r.consultor_persona, r.gasto_persona, r.administracion_persona, r.comite_persona
-    ]).map(x=> (x||"").trim()).filter(Boolean))).sort();
-
-    const selOwner = document.getElementById("filterOwner");
-    selOwner.innerHTML = '<option value="">Todos</option>' +
-      '<option value="Equipo H&A">Equipo H&A</option>' +
-      owners.map(v=> `<option value="${v}">${v}</option>`).join('');
-
-    const fillSelect = (selId, arr) => {
-      const sel = document.getElementById(selId);
-      sel.innerHTML = '<option value="">Todos</option>' + arr.map(v=> `<option value="${v}">${v}</option>`).join('');
-    };
-    fillSelect("filterYearFactura", yearsFactura);
-    fillSelect("filterYearPago", yearsPago);
-
-    const selEst = document.getElementById("filterEstatus");
-    selEst.innerHTML = '<option value="">Todos</option>' + estatus.map(v=> `<option value="${v}">${v}</option>`).join('');
-  }
-  function bindUI(){
-    document.getElementById("btnRefresh").addEventListener("click", async ()=>{
-      const b = document.getElementById("btnRefresh"); b.disabled = true;
-      try{ await refreshData(); } finally{ b.disabled = false; }
-    });
-    ["filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=>{
-      document.getElementById(id).addEventListener("change", renderAll);
-    });
-    document.getElementById("btnClearFilters").addEventListener("click", ()=>{
-      ["filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=> document.getElementById(id).value="");
-      renderAll();
-    });
-  }
-  window.addEventListener("DOMContentLoaded", async ()=>{
-    bindUI();
-    try{ await refreshData(); }catch(err){ console.error(err); alert(err.message); }
-  });
-
-  // renderDebt is defined earlier; bring it into scope
   function renderDebt(allRows){
     const RET = 0.145;
     const FIX = 6000000;
     const START_DEBT = 31000000;
-    document.getElementById("kpiDebtNow").textContent = "$ 31.000.000";
+    document.getElementById("kpiDebtNow").textContent = fmt(START_DEBT);
 
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth()+1, 1);
-    const asignadoMap = (function(){
-      const set = new Set(["owner h&a","loreto naranjo","cristóbal alfaro","cristobal alfaro"]);
-      const map = new Map();
-      for(const r of allRows){
-        if(!r.fecha_pago) continue;
-        if(!((r.estatus||"").toLowerCase().includes("pagad"))) continue;
-        let asignado = 0;
-        if(set.has((r.vendedor_persona||"").toLowerCase())) asignado += r.vendedor;
-        if(set.has((r.director_persona||"").toLowerCase())) asignado += r.director;
-        if(set.has((r.consultor_persona||"").toLowerCase())) asignado += r.consultor;
-        if(set.has((r.gasto_persona||"").toLowerCase())) asignado += r.gasto;
-        if(set.has((r.administracion_persona||"").toLowerCase())) asignado += r.administracion;
-        if(set.has((r.comite_persona||"").toLowerCase())) asignado += r.comite;
-        const key = `${r.fecha_pago.getFullYear()}-${String(r.fecha_pago.getMonth()+1).padStart(2,"0")}`;
-        map.set(key, (map.get(key)||0) + asignado);
-      }
-      return map;
-    })();
+    const asignadoMap = equipoHAIngresosByMonth(allRows);
 
     let debt = START_DEBT;
     const tbody = document.getElementById("debtRows");
@@ -350,12 +265,78 @@
       debt = debt - Math.max(0, variacion) + Math.max(0, -variacion);
       const row = `<tr>
         <td>${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}</td>
-        <td>${(FIX).toLocaleString("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0})}</td>
-        <td>${(liquidoMes).toLocaleString("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0})}</td>
-        <td style="color:${variacion>=0?'#43A047':'#E53935'}">${variacion>=0?'+':''}${(variacion).toLocaleString("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0})}</td>
-        <td>${(debt).toLocaleString("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0})}</td>
+        <td>${fmt(FIX)}</td>
+        <td>${fmt(liquidoMes)}</td>
+        <td style="color:${variacion>=0?'#43A047':'#E53935'}">${variacion>=0?'+':''}${fmt(variacion)}</td>
+        <td>${fmt(debt)}</td>
       </tr>`;
       tbody.insertAdjacentHTML("beforeend", row);
     }
   }
+
+  let RAW_ROWS = [];
+
+  function applyFilters(allRows){
+    const fy = document.getElementById("filterYearFactura").value;
+    const py = document.getElementById("filterYearPago").value;
+    const est = (document.getElementById("filterEstatus").value || "").toLowerCase();
+    const ownerSel = document.getElementById("filterOwner").value;
+    const ownerSet = getOwnerSet(ownerSel);
+
+    const base = allRows.filter(r=>{
+      let ok = true;
+      if(fy){ ok = ok && r.fecha_factura && r.fecha_factura.getFullYear().toString()===fy; }
+      if(py){ ok = ok && r.fecha_pago && r.fecha_pago.getFullYear().toString()===py; }
+      if(est){ ok = ok && (r.estatus||"").toLowerCase().includes(est); }
+      return ok;
+    });
+
+    return base.map(r=>{
+      const ownerTotal = ownerAmountForRow(r, ownerSet);
+      const breakdown = ownerRoleBreakdown(r, ownerSet);
+      return { ...r, owner_total: ownerTotal, ...Object.fromEntries(Object.entries(breakdown)) };
+    });
+  }
+
+  function renderAll(){
+    const rows = applyFilters(RAW_ROWS);
+    setKPIs(rows);
+    setStatusKPIs(rows);
+    setPrevisionLiquidos(rows);
+    renderPlanningNext6(rows);
+    renderPlanningYear(rows);
+    renderLists(rows);
+    renderDebt(RAW_ROWS);
+  }
+
+  async function refreshData(){
+    const cfg = window.APP_CONFIG || {};
+    if(cfg.WEB_APP_URL){
+      const a = document.createElement("a"); a.href = cfg.WEB_APP_URL; a.target="_blank"; a.rel="noopener"; a.textContent = "Ver Web App (Sheet)";
+      const cont = document.getElementById("sheetLink"); cont.innerHTML = ""; cont.appendChild(a);
+    }
+    const values = await fetchSheet();
+    RAW_ROWS = toRows(values);
+    populateFilters(RAW_ROWS);
+    renderAll();
+  }
+
+  function bindUI(){
+    document.getElementById("btnRefresh").addEventListener("click", async ()=>{
+      const b = document.getElementById("btnRefresh"); b.disabled = true;
+      try{ await refreshData(); } finally{ b.disabled = false; }
+    });
+    ["filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=>{
+      document.getElementById(id).addEventListener("change", renderAll);
+    });
+    document.getElementById("btnClearFilters").addEventListener("click", ()=>{
+      ["filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=> document.getElementById(id).value="");
+      renderAll();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", async ()=>{
+    bindUI();
+    try{ await refreshData(); }catch(err){ console.error(err); alert(err.message); }
+  });
 })();

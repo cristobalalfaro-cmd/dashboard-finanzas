@@ -1,1 +1,104 @@
-<!-- kept same as previous cell, omitted here to keep output short -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Financiero · Ingresos & Gastos</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0" defer></script>
+  <script src="config.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Dashboard Financiero</h1>
+    <div class="header-actions">
+      <button id="btnRefresh" class="btn btn-refresh" title="Actualizar datos">⟳ Actualizar</button>
+      <span class="source-indicator" id="sheetLink"></span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel filters">
+      <h2>Filtros</h2>
+      <div class="filters-grid">
+        <label><span>Año facturación</span><select id="filterYearFactura"><option value="">Todos</option></select></label>
+        <label><span>Año pago</span><select id="filterYearPago"><option value="">Todos</option></select></label>
+        <label><span>Estatus factura</span><select id="filterEstatus"><option value="">Todos</option></select></label>
+        <label><span>Owner</span><select id="filterOwner"><option value="">Todos</option></select></label>
+        <button id="btnClearFilters" class="btn btn-secondary">Limpiar filtros</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Resumen general</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Ingreso asignado (Bruto por Owner)</div><div class="kpi-value" id="kpiTotalIngresos">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Vendedor (15%)</div><div class="kpi-value" id="kpiVendedor">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Director PMO (18%)</div><div class="kpi-value" id="kpiDirectorPM">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Consultor (50%)</div><div class="kpi-value" id="kpiConsultor">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Gasto Proyecto (3%)</div><div class="kpi-value" id="kpiGastoProyecto">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Administración (4%)</div><div class="kpi-value" id="kpiAdministracion">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Comité (10%)</div><div class="kpi-value" id="kpiComite">$ —</div></div>
+      </div>
+      <p class="note-text">El “Ingreso asignado” corresponde a la sumatoria de los % por roles para el Owner filtrado (o para todos si no se elige Owner).</p>
+    </section>
+
+    <section class="panel">
+      <h2>Status facturación</h2>
+      <div class="kpi-grid kpi-compact">
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Monto total pagado (asignado)</div><div class="kpi-value" id="kpiPagado">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Monto total no pagado (asignado)</div><div class="kpi-value" id="kpiNoPagado">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Monto total no facturado (asignado)</div><div class="kpi-value" id="kpiNoFacturado">$ —</div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Deuda Financiera</h2>
+      <div class="debt-grid">
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Deuda actual base</div><div class="kpi-value" id="kpiDebtNow">$ 31.000.000</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Cargo mensual fijo</div><div class="kpi-value">$ 6.000.000</div></div>
+      </div>
+      <div class="subpanel">
+        <h3>Proyección (próximos 12 meses)</h3>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead>
+              <tr><th>Mes</th><th>Cargo fijo</th><th>Ingreso líquido Equipo H&amp;A (85,5%)</th><th>Variación</th><th>Deuda resultante</th></tr>
+            </thead>
+            <tbody id="debtRows"></tbody>
+          </table>
+        </div>
+        <p class="note-text">Para cada mes se consideran facturas con estatus <strong>Pagada</strong>. El ingreso líquido del <em>Equipo H&amp;A</em> corresponde al 85,5% del monto asignado al grupo (descuento 14,5%).</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Previsión y Líquidos</h2>
+      <div class="kpi-grid kpi-compact">
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Ingreso asignado (Bruto por Owner)</div><div class="kpi-value" id="kpiAsignadoBruto">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Previsión (Retención 14,5%)</div><div class="kpi-value" id="kpiRetencion">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Ingreso líquido</div><div class="kpi-value" id="kpiIngresoLiquido">$ —</div></div>
+      </div>
+      <p class="note-text">Ejemplo: si el Owner suma 86% del proyecto de $10.000.000 ⇒ asignado $8.600.000; previsión $1.247.000 (14,5%); líquido $7.353.000.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Planning financiero</h2>
+      <div class="subpanel"><h3>Vista 6 próximos meses</h3><canvas id="chartNext6" height="35"></canvas></div>
+      <div class="subpanel"><h3>Vista Año</h3><canvas id="chartYear" height="35"></canvas></div>
+    </section>
+
+    <section class="panel">
+      <h2>Listados por Estatus</h2>
+      <div class="lists-vertical">
+        <details open><summary>Pagadas</summary><ul id="listPagadas"></ul></details>
+        <details><summary>Por emitir</summary><ul id="listPorEmitir"></ul></details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer"><span>Hecho con ♥ · Gris / Blanco / Negro</span></footer>
+</body>
+</html>
