@@ -4,7 +4,7 @@
     return n.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
   };
 
-  // Porcentajes fijos de distribución (en orden): Vendedor, Director PM, Consultor, Gasto, Administración, Comité
+  // Porcentajes fijos (Vendedor, Director PM, Consultor, Gasto, Administración, Comité)
   const SPLIT = {
     vendedor: 0.15,
     director: 0.18,
@@ -34,11 +34,9 @@
     let s = String(str).trim().toLowerCase();
     if(!s) return null;
 
-    // Try native Date
     let d = new Date(s);
     if(!isNaN(d)) return d;
 
-    // dd/mm/yyyy or dd-mm-yyyy
     let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
     if(m){
       const [_,dd,mm,yy] = m;
@@ -48,7 +46,6 @@
       if(!isNaN(d2)) return d2;
     }
 
-    // dd-mmm-yy (spanish month short)
     let m2 = s.match(/^(\d{1,2})[\/\-\.]([a-záéíóú]+)[\/\-\.](\d{2,4})$/i);
     if(m2){
       let dd = m2[1].padStart(2,"0");
@@ -69,14 +66,12 @@
       cliente: ["cliente"],
       proyecto: ["proyecto"],
       total: ["total factura proyecto (bruto)", "total proyecto (bruto)", "total"],
-      // Personas responsables por rol
       vendedor_persona: ["vendedor (persona)", "vendedor persona", "responsable vendedor"],
       director_persona: ["director pm (persona)", "director pmo (persona)", "director pm persona", "responsable director"],
       consultor_persona: ["consultor (persona)", "consultor persona", "responsable consultor"],
       gasto_persona: ["gasto proyecto (persona)", "gasto (persona)", "responsable gasto"],
       administracion_persona: ["administración (persona)", "administracion (persona)", "responsable administración", "responsable administracion"],
       comite_persona: ["comité (persona)", "comite (persona)", "responsable comité", "responsable comite"],
-      // Fechas y estatus
       fecha_factura: ["fecha factu","fecha factura"],
       fecha_pago: ["fecha pago proyectada","fecha pago proyectad"],
       estatus: ["estatus factura","estado factura"],
@@ -92,21 +87,16 @@
     return map;
   }
 
-  async function fetchSheet() {
-  const url = window.APP_CONFIG.WEB_APP_URL;
-  if (!url) throw new Error("Falta configurar WEB_APP_URL en config.js");
-  const resp = await fetch(url);
-  const data = await resp.json();
-  return data.values || [];
-  }
-
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${range}?key=${key}`;
-    const resp = await fetch(url);
+  async function fetchSheet(){
+    const url = (window.APP_CONFIG && window.APP_CONFIG.WEB_APP_URL) || "";
+    if(!url) throw new Error("Falta configurar WEB_APP_URL en config.js");
+    const resp = await fetch(url, { cache: "no-store" });
     if(!resp.ok){
       const t = await resp.text();
-      throw new Error(`Error al leer Google Sheets: ${resp.status} ${t}`);
+      throw new Error(`Error al leer Web App: ${resp.status} ${t}`);
     }
     const data = await resp.json();
+    // Espera { values: [...] } tal como devuelve code.gs
     return data.values || [];
   }
 
@@ -120,7 +110,6 @@
       const get = (k)=> row[(idx[k] ?? -1)] ?? "";
 
       const totalRaw = +String(get("total")).replace(/[^\d\-.,]/g,"").replace(/\./g,"").replace(",",".") || 0;
-      // Aplicar split por % fijo (redondeo a pesos)
       const vendedor = Math.round(totalRaw * SPLIT.vendedor);
       const director = Math.round(totalRaw * SPLIT.director);
       const consultor = Math.round(totalRaw * SPLIT.consultor);
@@ -174,7 +163,6 @@
     document.getElementById("kpiAdministracion").textContent = currencyFmt(sumAdm);
     document.getElementById("kpiComite").textContent = currencyFmt(sumCom);
 
-    // Chart roles
     const ctx = document.getElementById("chartRoles");
     if(ctx){
       const data = {
@@ -182,16 +170,12 @@
         datasets: [{
           label: "Montos",
           data: [sumVend, sumDir, sumCons, sumGasto, sumAdm, sumCom],
-          backgroundColor: [
-            "#d0d0d0","#bdbdbd","#a8a8a8","#949494","#7f7f7f","#6b6b6b"
-          ]
+          backgroundColor: ["#d0d0d0","#bdbdbd","#a8a8a8","#949494","#7f7f7f","#6b6b6b"]
         }]
       };
       new Chart(ctx, { type: "bar", data, options:{
         responsive:true,
-        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
-          label: (ctx)=> currencyFmt(ctx.parsed.y)
-        } } },
+        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: (ctx)=> currencyFmt(ctx.parsed.y) } } },
         scales:{
           x:{ ticks:{ color:"#e0e0e0" }, grid:{ color:"#2a2b2e" } },
           y:{ ticks:{ color:"#e0e0e0" }, grid:{ color:"#2a2b2e" } }
@@ -262,15 +246,13 @@
   }
 
   async function init(){
-    // show sheet link
     const cfg = window.APP_CONFIG || {};
-    if(cfg.SHEET_ID){
-      const url = `https://docs.google.com/spreadsheets/d/${cfg.SHEET_ID}/edit`;
+    if(cfg.WEB_APP_URL){
       const a = document.createElement("a");
-      a.href = url;
+      a.href = cfg.WEB_APP_URL;
       a.target = "_blank";
       a.rel = "noopener";
-      a.textContent = "Ver Google Sheets";
+      a.textContent = "Ver Web App (Sheet)";
       document.getElementById("sheetLink").appendChild(a);
     }
 
@@ -287,7 +269,6 @@
     setKPIs(rows);
     renderLists(rows);
 
-    // load & draw gantt once Google Charts is ready
     google.charts.load('current', {'packages':['gantt']});
     const render = () => {
       const months = parseInt(document.getElementById('monthsWindow').value,10) || 6;
