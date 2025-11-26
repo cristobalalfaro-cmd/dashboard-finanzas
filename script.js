@@ -116,6 +116,8 @@
   }
 
   function populateFilters(allRows){
+    const clientes = Array.from(new Set(allRows.map(r=> (r.cliente||"").trim()).filter(Boolean))).sort();
+    const proyectos = Array.from(new Set(allRows.map(r=> (r.proyecto||"").trim()).filter(Boolean))).sort();
     const yearsFactura = Array.from(new Set(allRows.filter(r=>r.fecha_factura).map(r=> r.fecha_factura.getFullYear()))).sort();
     const yearsPago = Array.from(new Set(allRows.filter(r=>r.fecha_pago).map(r=> r.fecha_pago.getFullYear()))).sort();
     const estatus = Array.from(new Set(allRows.map(r=> (r.estatus||"").trim()).filter(Boolean))).sort();
@@ -132,6 +134,8 @@
       const sel = document.getElementById(selId);
       sel.innerHTML = '<option value="">Todos</option>' + arr.map(v=> `<option value="${v}">${v}</option>`).join('');
     };
+    fillSelect("filterCliente", clientes);
+    fillSelect("filterProyecto", proyectos);
     fillSelect("filterYearFactura", yearsFactura);
     fillSelect("filterYearPago", yearsPago);
 
@@ -142,7 +146,7 @@
   function setStatusKPIs(rows){
     const by = (pred)=> rows.filter(pred).reduce((a,r)=> a + (r.owner_total||0), 0);
     const pagado = by(r=> (r.estatus||"").toLowerCase().includes("pagad"));
-    const noPagado = by(r=> (r.estatus||"").toLowerCase().includes("cobrada"));
+    const noPagado = rows.filter(r=> (r.estatus||"").toLowerCase() === "emitida").reduce((a,r)=> a + (r.total||0), 0);
     const noFacturado = by(r=> (r.estatus||"").toLowerCase().includes("por emitir"));
     document.getElementById("kpiPagado").textContent = fmt(pagado);
     document.getElementById("kpiNoPagado").textContent = fmt(noPagado);
@@ -243,26 +247,128 @@
     }
     return map;
   }
+  let gaugeChart = null;
+  
+  function renderGaugeChart(debtValue){
+    const ctx = document.getElementById("gaugeChart");
+    if(!ctx) return;
+    
+    const MAX_DEBT = 50000000;
+    const GREEN_THRESHOLD = 10000000;
+    const YELLOW_THRESHOLD = 30000000;
+    
+    const normalizedValue = Math.min(Math.max(debtValue, 0), MAX_DEBT);
+    const percentage = (normalizedValue / MAX_DEBT) * 100;
+    
+    let needleColor = '#43A047';
+    if(debtValue >= YELLOW_THRESHOLD) needleColor = '#E53935';
+    else if(debtValue >= GREEN_THRESHOLD) needleColor = '#FFC107';
+    
+    if(gaugeChart) gaugeChart.destroy();
+    
+    gaugeChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [20, 40, 40],
+          backgroundColor: ['#43A047', '#FFC107', '#E53935'],
+          borderWidth: 0,
+          circumference: 180,
+          rotation: 270
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        }
+      },
+      plugins: [{
+        id: 'gaugeNeedle',
+        afterDatasetsDraw(chart) {
+          const { ctx, chartArea } = chart;
+          const cx = (chartArea.left + chartArea.right) / 2;
+          const cy = chartArea.bottom - 10;
+          const radius = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top) * 0.4;
+          
+          const angle = Math.PI + (percentage / 100) * Math.PI;
+          const needleLength = radius * 0.85;
+          const needleX = cx + Math.cos(angle) * needleLength;
+          const needleY = cy + Math.sin(angle) * needleLength;
+          
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(needleX, needleY);
+          ctx.strokeStyle = needleColor;
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+          ctx.fillStyle = needleColor;
+          ctx.fill();
+          
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 14px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(fmt(debtValue), cx, cy - 20);
+          ctx.restore();
+        }
+      }]
+    });
+  }
+  
   function renderDebt(allRows){
     const RET = 0.145;
     const FIX = 6000000;
-    const START_DEBT = 31000000;
-    document.getElementById("kpiDebtNow").textContent = fmt(START_DEBT);
-
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth()+1, 1);
+    const INITIAL_LOAN = 31000000;
     const asignadoMap = equipoHAIngresosByMonth(allRows);
+    
+    let totalBrutoHA = 0;
+    for (const [key, asignadoMes] of asignadoMap) {
+      totalBrutoHA += asignadoMes;
+    }
+    const totalRealHA = Math.round(totalBrutoHA * (1 - RET));
+    
+    document.getElementById("kpiIngresoBrutoHA").textContent = fmt(totalBrutoHA);
+    document.getElementById("kpiIngresoRealHA").textContent = fmt(totalRealHA);
+    
+    const now = new Date();
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const chargeStartDate = new Date(2025, 11, 1);
+    
+    let debtAccumulated = INITIAL_LOAN;
+    
+    let chargeDate = new Date(chargeStartDate);
+    while (chargeDate <= currentMonth) {
+      debtAccumulated += FIX;
+      chargeDate.setMonth(chargeDate.getMonth() + 1);
+    }
+    
+    debtAccumulated -= totalRealHA;
+    
+    document.getElementById("kpiDebtNow").textContent = fmt(debtAccumulated);
+    
+    renderGaugeChart(debtAccumulated);
 
-    let debt = START_DEBT;
+    const start = new Date(now.getFullYear(), now.getMonth()+1, 1);
+    let debt = debtAccumulated;
     const tbody = document.getElementById("debtRows");
     tbody.innerHTML = "";
     for(let i=0;i<12;i++){
       const d = new Date(start.getFullYear(), start.getMonth()+i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      debt += FIX;
       const asignadoMes = asignadoMap.get(key)||0;
       const liquidoMes = Math.round(asignadoMes * (1 - RET));
+      debt -= liquidoMes;
       const variacion = liquidoMes - FIX;
-      debt = debt - Math.max(0, variacion) + Math.max(0, -variacion);
       const row = `<tr>
         <td>${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}</td>
         <td>${fmt(FIX)}</td>
@@ -277,6 +383,8 @@
   let RAW_ROWS = [];
 
   function applyFilters(allRows){
+    const cliente = document.getElementById("filterCliente").value;
+    const proyecto = document.getElementById("filterProyecto").value;
     const fy = document.getElementById("filterYearFactura").value;
     const py = document.getElementById("filterYearPago").value;
     const est = (document.getElementById("filterEstatus").value || "").toLowerCase();
@@ -285,6 +393,8 @@
 
     const base = allRows.filter(r=>{
       let ok = true;
+      if(cliente){ ok = ok && (r.cliente||"").trim() === cliente; }
+      if(proyecto){ ok = ok && (r.proyecto||"").trim() === proyecto; }
       if(fy){ ok = ok && r.fecha_factura && r.fecha_factura.getFullYear().toString()===fy; }
       if(py){ ok = ok && r.fecha_pago && r.fecha_pago.getFullYear().toString()===py; }
       if(est){ ok = ok && (r.estatus||"").toLowerCase().includes(est); }
@@ -326,11 +436,11 @@
       const b = document.getElementById("btnRefresh"); b.disabled = true;
       try{ await refreshData(); } finally{ b.disabled = false; }
     });
-    ["filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=>{
+    ["filterCliente","filterProyecto","filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=>{
       document.getElementById(id).addEventListener("change", renderAll);
     });
     document.getElementById("btnClearFilters").addEventListener("click", ()=>{
-      ["filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=> document.getElementById(id).value="");
+      ["filterCliente","filterProyecto","filterYearFactura","filterYearPago","filterEstatus","filterOwner"].forEach(id=> document.getElementById(id).value="");
       renderAll();
     });
   }

@@ -23,6 +23,8 @@
     <section class="panel filters">
       <h2>Filtros</h2>
       <div class="filters-grid">
+        <label><span>Cliente</span><select id="filterCliente"><option value="">Todos</option></select></label>
+        <label><span>Proyecto</span><select id="filterProyecto"><option value="">Todos</option></select></label>
         <label><span>Año facturación</span><select id="filterYearFactura"><option value="">Todos</option></select></label>
         <label><span>Año pago</span><select id="filterYearPago"><option value="">Todos</option></select></label>
         <label><span>Estatus factura</span><select id="filterEstatus"><option value="">Todos</option></select></label>
@@ -48,17 +50,29 @@
     <section class="panel">
       <h2>Status facturación</h2>
       <div class="kpi-grid kpi-compact">
-        <div class="kpi-card"><div class="kpi-title kpi-yellow">Monto total pagado (asignado)</div><div class="kpi-value" id="kpiPagado">$ —</div></div>
-        <div class="kpi-card"><div class="kpi-title kpi-yellow">Monto total no pagado (asignado)</div><div class="kpi-value" id="kpiNoPagado">$ —</div></div>
-        <div class="kpi-card"><div class="kpi-title kpi-yellow">Monto total no facturado (asignado)</div><div class="kpi-value" id="kpiNoFacturado">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Facturas emitidas - pagadas</div><div class="kpi-value" id="kpiPagado">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Facturas emitidas - no pagadas</div><div class="kpi-value" id="kpiNoPagado">$ —</div></div>
+        <div class="kpi-card"><div class="kpi-title kpi-yellow">Facturas no emitidas - no pagadas</div><div class="kpi-value" id="kpiNoFacturado">$ —</div></div>
       </div>
     </section>
 
     <section class="panel">
-      <h2>Deuda Financiera</h2>
-      <div class="debt-grid">
-        <div class="kpi-card"><div class="kpi-title kpi-yellow">Deuda actual base</div><div class="kpi-value" id="kpiDebtNow">$ 31.000.000</div></div>
-        <div class="kpi-card"><div class="kpi-title kpi-yellow">Cargo mensual fijo</div><div class="kpi-value">$ 6.000.000</div></div>
+      <h2>Salud Financiera</h2>
+      <div class="salud-financiera-grid">
+        <div class="kpi-column">
+          <div class="kpi-card"><div class="kpi-title kpi-yellow">Ingresos bruto Equipo H&amp;A</div><div class="kpi-value" id="kpiIngresoBrutoHA">$ —</div></div>
+          <div class="kpi-card"><div class="kpi-title kpi-yellow">Ingreso real Equipo H&amp;A después de impuestos SII</div><div class="kpi-value" id="kpiIngresoRealHA">$ —</div></div>
+          <div class="kpi-card"><div class="kpi-title kpi-yellow">Deuda acumulada</div><div class="kpi-value" id="kpiDebtNow">$ —</div></div>
+          <div class="kpi-card"><div class="kpi-title kpi-yellow">Gasto fijo Mensual</div><div class="kpi-value">$ 6.000.000</div></div>
+        </div>
+        <div class="gauge-container">
+          <canvas id="gaugeChart"></canvas>
+          <div class="gauge-legend">
+            <span class="legend-item"><span class="legend-color" style="background:#43A047"></span> Saludable (&lt; $10M)</span>
+            <span class="legend-item"><span class="legend-color" style="background:#FFC107"></span> Precaución</span>
+            <span class="legend-item"><span class="legend-color" style="background:#E53935"></span> Crítico ($50M)</span>
+          </div>
+        </div>
       </div>
       <div class="subpanel">
         <h3>Proyección (próximos 12 meses)</h3>
