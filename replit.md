@@ -65,6 +65,13 @@ A financial dashboard application that connects to Google Sheets to display fina
 - 12-month forward projection
 
 ## Recent Changes
+- **2025-11-26**: Updated 12-month projection table
+  - Renamed "Ingreso líquido Equipo H&A" to "Ingreso líquido Proyectado Equipo H&A"
+  - Renamed "Variación" to "Variación teórica"
+  - Renamed "Deuda resultante" to "Deuda proyectada"
+  - Projection now uses invoices with status "Por emitir" instead of "Pagada"
+  - This only affects the projection table, not Salud Financiera KPIs
+
 - **2025-11-26**: Added "Salud Financiera" section (renamed from "Deuda Financiera")
   - Added "Ingresos bruto Equipo H&A" KPI (sum of all paid invoices assigned to Equipo H&A)
   - Added "Ingreso real Equipo H&A después de impuestos SII" KPI (bruto - 14.5%)

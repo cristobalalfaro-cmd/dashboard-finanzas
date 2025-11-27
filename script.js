@@ -247,6 +247,24 @@
     }
     return map;
   }
+  
+  function equipoHAProyectadoByMonth(allRows){
+    const map = new Map();
+    for(const r of allRows){
+      if(!r.fecha_pago) continue;
+      if(!((r.estatus||"").toLowerCase().includes("por emitir"))) continue;
+      let asignado = 0;
+      if(EQUIPO_HA.has((r.vendedor_persona||"").toLowerCase())) asignado += r.vendedor;
+      if(EQUIPO_HA.has((r.director_persona||"").toLowerCase())) asignado += r.director;
+      if(EQUIPO_HA.has((r.consultor_persona||"").toLowerCase())) asignado += r.consultor;
+      if(EQUIPO_HA.has((r.gasto_persona||"").toLowerCase())) asignado += r.gasto;
+      if(EQUIPO_HA.has((r.administracion_persona||"").toLowerCase())) asignado += r.administracion;
+      if(EQUIPO_HA.has((r.comite_persona||"").toLowerCase())) asignado += r.comite;
+      const key = `${r.fecha_pago.getFullYear()}-${String(r.fecha_pago.getMonth()+1).padStart(2,"0")}`;
+      map.set(key, (map.get(key)||0) + asignado);
+    }
+    return map;
+  }
   let gaugeChart = null;
   
   function renderGaugeChart(debtValue){
@@ -357,6 +375,7 @@
     
     renderGaugeChart(debtAccumulated);
 
+    const proyectadoMap = equipoHAProyectadoByMonth(allRows);
     const start = new Date(now.getFullYear(), now.getMonth()+1, 1);
     let debt = debtAccumulated;
     const tbody = document.getElementById("debtRows");
@@ -365,14 +384,14 @@
       const d = new Date(start.getFullYear(), start.getMonth()+i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
       debt += FIX;
-      const asignadoMes = asignadoMap.get(key)||0;
-      const liquidoMes = Math.round(asignadoMes * (1 - RET));
-      debt -= liquidoMes;
-      const variacion = liquidoMes - FIX;
+      const proyectadoMes = proyectadoMap.get(key)||0;
+      const liquidoProyectado = Math.round(proyectadoMes * (1 - RET));
+      debt -= liquidoProyectado;
+      const variacion = liquidoProyectado - FIX;
       const row = `<tr>
         <td>${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}</td>
         <td>${fmt(FIX)}</td>
-        <td>${fmt(liquidoMes)}</td>
+        <td>${fmt(liquidoProyectado)}</td>
         <td style="color:${variacion>=0?'#43A047':'#E53935'}">${variacion>=0?'+':''}${fmt(variacion)}</td>
         <td>${fmt(debt)}</td>
       </tr>`;
